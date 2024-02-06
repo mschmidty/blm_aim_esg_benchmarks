@@ -1,0 +1,33 @@
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Roboto+Mono:wght@400;700&display=swap');
+
+
+p {
+  font-family: Merriweather, serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+h1, h2, h3, h4, h5, h6 {
+  font-family: Merriweather, serif;
+  font-weight: 900;
+}
+
+code, p code {
+  font-family: "Roboto Mono", 'Courier New', Courier, monospace;
+  font-weight: 400;
+}
+table {
+  font-family: "Merriweather";
+  border-collapse: collapse;
+  border-color: #000;
+  border-bottom: 2px solid black;
+  font-size: 11px;
+}
+thead.header, thead tr, tbody{
+  border-top: 2px solid black;
+}
+
+.table>thead>tr>th {
+  border-bottom: 2px solid black;
+}
+

@@ -1,0 +1,104 @@
+---
+title: 'Building and Checking Benchmarks with ESGs'
+author: 'Michael Schmidt'
+date: '`r Sys.Date()`'
+output: 
+  html_document:
+    keep_md: yes
+    css: "style.css"
+    self_contained: false
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning=FALSE,
+  collapse = TRUE, comment = "#>"
+)
+```
+
+
+```{r}
+library(extrafont)
+library(ggplot2)
+```
+
+
+## Introduction
+The Tres Rios Field Office is in the process of planning a five year Assessment, Inventory, and Monitoring design.  For this effort we need benchmarks to compare each plot to.  In the past Ecological Site Descriptions (ESDs) were used to stratify the points into ecological units and provide quantitative benchmarks.  However, much of the Tres Rios Field Office lacks ESDs and where they do exist the descriptions are often unhelpful for comparison. For example, some ESDs provide cover percent estimates for structural groups, which is directly comparable to AIM data indicators, but many just provide ibs/acre making AIM data ESD comparisons challenging.  Ecological Site Groups (ESGs) were developed by Naumen et al. (2022) as an alternative or evolution to Ecological Site Descriptions. ESGs are Soil Geomorphologic Units (SGU) that are further divided into climactic zones.  SGUs were developed, in part, by grouping ESDs.  Importantly, and unlike ESDs, ESGs were predicted accross the Colorado Plataea at a 30m resolution privding a estimated ESG for each pixel.  ESDs are similarly mapped but are grouped so that each spatial unit contains multiple ESDs.  Additionally ESDs are arbitrarily broken up into Major Land Resource Areas (MLRAs) and there are inconsistencies between how soils and sites are mapped between MLRAs. Ecological Side Groups were mapped systematically across a large area. Nonethesless, both of these approaches are imperfect. However, given the ease of stratification using ESGs, vs. ESDs, and the geographic consistency over a large area, we decided to use ESGs to make benchmarks for our next 5 year design. 
+
+In this analysis we use ESGs to stratify existing AIM points to develop benchmarks that are divided into Suitable, Marginal and Unsuitable ratings.
+
+```{r echo=FALSE}
+ind<-tar_read(indicators)
+```
+
+## Methods
+We developed benchmarks for the following AIM indicators (`r ind%>%length()`): `r ind`. Two of these were calculated `pct_sagebrush_dead` (`(AH_SagebrushCover-AH_SagebrushCover_Live)/AH_SagebrushCover)*100`) and `FH_WoodyAndHerbLitterCover` (`FH_WoodyLitterCover+FH_HerbLitterCover`) but the rest we pulled raw from the the BLM SDE server. These benchmarks were chosen because we believe they represent useful tools in managing the Tres Rios Field Office.  This methodology could be used for any benchmark collected as part of a core method as part of the AIM protocol. 
+
+Benchmarks were developed by first categorizing (joining) each AIM or LMF point by individual ESG. All AIM and LMF points that overlapped any ESG were used. Then for each indicator, within each category, min, max and quartiles were calculated. 
+
+```{r}
+
+```
+
+Then the quartiles were divided into suitable, marginal and unsuitable.  In most cases two quartiles were grouped to form a suitable rating, marginal was one quartile and unsuitable was one quartile.  For some indicators suitable was the first and second quartile, marginal was the the third quartile and unsuitable was the fourth quartile. All combinations were considered.  
+
+```{r}
+ind_dir<-tar_read(indicator_direction_of_ranking)
+
+ind_dir%>%
+  mutate(
+    Q1 = case_when(
+      type == "low_marginal" ~ "Marginal",
+      type == "high_marginal" ~ "Unsuitable",
+      type == "high_suitable" ~ "Unsuitable",
+      type == "low_suitable" ~ "Suitable",
+      type == "low_suitable_single_q" ~ "Suitable"
+    ),
+    Q2 = case_when(
+      type == "low_marginal" ~ "Suitable",
+      type == "high_marginal" ~ "Suitable",
+      type == "high_suitable" ~ "Marginal",
+      type == "low_suitable" ~ "Suitable",
+      type == "low_suitable_single_q" ~ "Marginal"
+    ),
+    Q3 = case_when(
+      type == "low_marginal" ~ "Suitable",
+      type == "high_marginal" ~ "Suitable",
+      type == "high_suitable" ~ "Suitable",
+      type == "low_suitable" ~ "Marginal",
+      type == "low_suitable_single_q" ~ "Unsuitable"
+    ),
+    Q4 = case_when(
+      type == "low_marginal" ~ "Unsuitable",
+      type == "high_marginal" ~ "Marginal",
+      type == "high_suitable" ~ "Suitable",
+      type == "low_suitable" ~ "Unsuitable",
+      type == "low_suitable_single_q" ~ "Unsuitable"
+    )
+  )%>%
+  select(Indicator = indicator, Q1:Q4)%>%
+  knitr::kable(booktabs = TRUE, caption="Each indicator and the quartile rankings by suitable, moderate and unsuitable.")
+
+```
+
+These ranges were chosen based on professional judgement.  In many cases it made sense to have Suitable center around the median, with some indicators having the fourth quartile be marginal and the first unsuitable.  For instance AH_SagebrushCover we figured more sagebrush is less bad then too little. Therefore we concluded that the fourth quartile should be marginal and the first quartile should be unsuitable.  This is the same approach the the BLM Gunnison sage-grouse habitat suitability rankings use.  In some cases, however, it made the most sense to have the third and fourth quartiles represent suitable as was the case with `r ind_dir%>%filter(type=="high_suitable")%>%pull(indicator)`. 
+
+In addition to categorizing these benchmarks we also found it useful to, in some cases, remove zeros from the data for certain indicators.  In many cases we did this because there were so many zeros for that indicator accross quartiles, that more than one quartile ranged from zero to zero.  For more than one indicator all but one quartile was zeros. This fact demonstrates a limitation of this process.  It is broad and general and involves quite a bit of error.  However, we find these generalizations to be reasonable when comparing this approach to ESDs which contain large gaps in our field office and in many cases do not suggest plant coverages or heights but plant production.
+
+```{r fig1, out.width='100%'}
+tar_load(example_of_point_distribution_for_arid_warm)
+example_of_point_distribution_for_arid_warm
+```
+
+
+
+
+
+
+
+
+

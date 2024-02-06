@@ -1,0 +1,12 @@
+get_trfo_gusg_ch_occupied<-function(){
+  dissolved_blm<-trfo_blm%>%
+    st_collection_extract("POLYGON")%>%
+    st_union()
+  gusg_ch%>%
+    st_transform(st_crs(dissolved_blm))%>%
+    st_intersection(dissolved_blm)%>%
+    mutate(
+      area_recalc=st_area(.),
+      acres_recalc=as.numeric(area_recalc)*0.000247105
+    )
+}

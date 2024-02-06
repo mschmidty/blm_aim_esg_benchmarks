@@ -1,0 +1,178 @@
+---
+title: 'Scripts for Making the GUSG AIM worksheet for 2023'
+author: 'Michael Schmidt'
+date: '`r Sys.Date()`'
+output:
+  pagedown::html_paged:
+    self_contained: false
+    toc: false
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning=FALSE
+)
+```
+
+```{r}
+options(
+  max.print=150,
+  vsc.use_httpgd = TRUE,
+  device = 'windows'
+)
+library(tidyverse)
+library(sf)
+library(trfotools)
+library(here)
+library(terra)
+library(tidyselect)
+library(MetBrewer)
+
+theme_set(theme_minimal())
+```
+
+## Load the AIM and ESG data
+```{r}
+terradat <- readRDS(here("data/cache/terradat_2018to2021.rds"))
+esg<-rast("G:\\r_scripts\\aim\\projects\\ecological_site_groups\\data\\ESGs\\ESGs.tif")
+
+# Turn on ESG layer instead of count
+activeCat(esg)<-"ESG"
+```
+
+## Clip to TRFO and extract ESG to trfo points and reform for comparision
+```{r}
+tdat_trfo_cl<-terradat$tdat%>%
+  st_transform(st_crs(trfo_b))%>%
+  st_intersection(trfo_b)%>%
+  st_transform(crs(esg))
+  
+esg_tdat_trfo<-terra::extract(esg, tdat_trfo_cl)%>%
+  select(ESG)%>%
+  cbind(tdat_trfo_cl)%>%
+  as_tibble()%>%
+  select(-geometry)
+
+rm(terradat)
+rm(esg)
+```
+
+## Load benchmarks
+```{r}
+bm_long<-read_csv("projects/2023_design_worksheet/output/long_benchmarks_2023.csv")
+
+indicators<-bm_long%>%
+  distinct(indicator_parent)%>%
+  pull(indicator_parent)
+```
+
+## Transform ter
+```{r}
+long_esg_tdat_trfo<-esg_tdat_trfo%>%
+  mutate(
+    pct_sagebrush_dead=((AH_SagebrushCover-AH_SagebrushCover_Live)/AH_SagebrushCover)*100,
+    FH_WoodyAndHerbLitterCover = FH_WoodyLitterCover+FH_HerbLitterCover
+  )%>%
+  select(ESG, PlotID, all_of(indicators))%>%
+  pivot_longer(cols=all_of(indicators), names_to="indicator", values_to="point_value")
+
+bm_long_cl<-bm_long%>%
+  filter(!is.na(directional_indicator), directional_indicator != "n")%>%
+  select(ESG, indicator_parent, indicator_cat=indicator, directional_indicator, bm_value=value)
+
+sub_bm_comp_pts_trfo<-long_esg_tdat_trfo%>%
+  left_join(bm_long_cl, by=c("ESG", "indicator"="indicator_parent"))
+
+comparisons<-sub_bm_comp_pts_trfo%>%
+  select(ESG, indicator, directional_indicator, bm_value)%>%
+  group_by(ESG, indicator, directional_indicator)%>%
+  summarize(bm_value = max(bm_value))%>%
+  ungroup()%>%
+  pivot_wider(names_from=directional_indicator, values_from=bm_value)
+
+sub_bm_comp_pts_trfo%>%
+  select(ESG, PlotID, indicator, point_value)%>%
+  group_by()
+
+
+#   mutate(indicator_comp = case_when(
+#     directional_indicator == ">=" && point_value >= bm_value
+#   ))%>%
+#   count(ESG, PlotID, indicator, indicator_comp)%>%
+#   filter(!(indicator_comp=="meets" & n==1))%>%
+#   count(indicator, indicator_comp)
+
+
+# bm_comp_pts_trfo%>%
+#   ggplot(aes(indicator, n, fill=indicator_comp))+
+#   geom_col()+
+#   coord_flip()+
+#   scale_fill_manual(values = c("#E74C3C", "#3498DB", "#2ECC71"))
+
+
+var_low_marginal=c(
+  "BareSoilCover", 
+  "GapCover_25_plus",
+  "GapCover_101_200",
+  "GapCover_200_plus",
+  "AH_SagebrushCover"
+)
+var_high_marginal=c(
+  "TotalFoliarCover",
+  "AH_NonNoxPerenForbCover",
+  "Hgt_PerenForb_Avg",
+  "AH_NonNoxPerenGrassCover",
+  "Hgt_NonNoxPerenGrass_Avg",
+  "Hgt_Sagebrush_Avg",
+  "AH_NonNoxTreeCover",
+  "FH_WoodyAndHerbLitterCover"
+)
+
+var_low_suitable=c(
+  "AH_NoxCover",
+  "AH_NoxAnnGrassCover",
+  "pct_sagebrush_dead",
+  "NumSpp_NoxPlant"
+)
+
+var_high_suitable=c(
+  "SoilStability_Protected",
+  "SoilStability_Unprotected"
+)
+
+conditional_bm_comp_trfo<-bm_comp_pts_trfo%>%
+  mutate(conditional_rating = case_when(
+    indicator %in% var_low_marginal & indicator_comp == "lower" ~ "Marginal",
+    indicator %in% var_low_marginal & indicator_comp == "meets" ~ "Suitable",
+    indicator %in% var_low_marginal & indicator_comp == "higher" ~ "Unsuitable",
+    indicator %in% var_high_marginal & indicator_comp == "lower" ~ "Unsuitable",
+    indicator %in% var_high_marginal & indicator_comp == "meets" ~ "Suitable",
+    indicator %in% var_high_marginal & indicator_comp == "higher" ~ "Marginal",
+    indicator %in% var_low_suitable & indicator_comp == "lower" ~ "Suitable",
+    indicator %in% var_low_suitable & indicator_comp == "meets" ~ "Marginal",
+    indicator %in% var_low_suitable & indicator_comp == "higher" ~ "Unsuitable",
+    indicator %in% var_high_suitable & indicator_comp == "lower" ~ "Unsuitable",
+    indicator %in% var_high_suitable & indicator_comp == "meets" ~ "Suitable",
+    indicator %in% var_high_suitable & indicator_comp == "higher" ~ "Marginal",
+  ))
+```
+
+```{r}
+conditional_bm_comp_trfo%>%
+  filter(!is.na(conditional_rating))%>%
+  group_by(indicator)%>%
+  mutate(
+    freq=round(n/sum(n)*100, digits=1),
+    conditional_rating=fct_relevel(conditional_rating, c("Unsuitable", "Marginal", "Suitable"))
+  )%>%
+  ggplot(aes(indicator, freq, fill=conditional_rating))+
+  geom_col()+
+  coord_flip()+
+  scale_fill_manual(values = c("#E74C3C", "#3498DB", "#2ECC71" ))
+```
+
+I think if I had to do this over again I would keep the averages in here so that we could separate things better.  For example "NumSpp_NoxPlant" Suitable should be lowest 50% quantile marginal should be 50% to 75% and Unsuitable should be > 75%.
+
+Also I looked at the difference of 50% quantile and mean and they are different.  This could be a future improvement. 

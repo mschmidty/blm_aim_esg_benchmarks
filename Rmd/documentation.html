@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Michael Schmidt" />
+
+<meta name="date" content="2023-01-31" />
+
+<title>Building and Checking Benchmarks with ESGs</title>
+
+<script src="documentation_files/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="documentation_files/bootstrap-3.3.5/css/bootstrap.min.css" rel="stylesheet" />
+<script src="documentation_files/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="documentation_files/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="documentation_files/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="documentation_files/navigation-1.1/tabsets.js"></script>
+<link href="documentation_files/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="documentation_files/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+details > summary > p:only-child {
+  display: inline;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before, .tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "\e259";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "\e258";
+  font-family: 'Glyphicons Halflings';
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Building and Checking Benchmarks with ESGs</h1>
+<h4 class="author">Michael Schmidt</h4>
+<h4 class="date">2023-01-31</h4>
+
+</div>
+
+
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>The Tres Rios Field Office is in the process of planning a five year Assessment, Inventory, and Monitoring design. For this effort we need benchmarks to compare each plot to. In the past Ecological Site Descriptions (ESDs) were used to stratify the points into ecological units and provide quantitative benchmarks. However, much of the Tres Rios Field Office lacks ESDs and where they do exist the descriptions are often unhelpful for comparison. For example, some ESDs provide cover percent estimates for structural groups, which is directly comparable to AIM data indicators, but many just provide ibs/acre making AIM data ESD comparisons challenging. Ecological Site Groups (ESGs) were developed by Naumen et al. (2022) as an alternative or evolution to Ecological Site Descriptions. ESGs are Soil Geomorphologic Units (SGU) that are further divided into climactic zones. SGUs were developed, in part, by grouping ESDs. Importantly, and unlike ESDs, ESGs were predicted accross the Colorado Plataea at a 30m resolution privding a estimated ESG for each pixel. ESDs are similarly mapped but are grouped so that each spatial unit contains multiple ESDs. Additionally ESDs are arbitrarily broken up into Major Land Resource Areas (MLRAs) and there are inconsistencies between how soils and sites are mapped between MLRAs. Ecological Side Groups were mapped systematically across a large area. Nonethesless, both of these approaches are imperfect. However, given the ease of stratification using ESGs, vs. ESDs, and the geographic consistency over a large area, we decided to use ESGs to make benchmarks for our next 5 year design.</p>
+<p>In this analysis we use ESGs to stratify existing AIM points to develop benchmarks that are divided into Suitable, Marginal and Unsuitable ratings.</p>
+</div>
+<div id="methods" class="section level2">
+<h2>Methods</h2>
+<p>We developed benchmarks for the following AIM indicators (20): BareSoilCover, TotalFoliarCover, GapCover_25_plus, GapCover_101_200, GapCover_200_plus, AH_NonNoxPerenForbCover, Hgt_PerenForb_Avg, AH_NonNoxPerenGrassCover, Hgt_NonNoxPerenGrass_Avg, AH_NonNoxShrubCover, AH_NonNoxTreeCover, AH_NoxAnnGrassCover, AH_NoxCover, NumSpp_NoxPlant, AH_SagebrushCover, Hgt_Sagebrush_Avg, pct_sagebrush_dead, SoilStability_Protected, SoilStability_Unprotected, FH_WoodyAndHerbLitterCover. Two of these were calculated <code>pct_sagebrush_dead</code> (<code>(AH_SagebrushCover-AH_SagebrushCover_Live)/AH_SagebrushCover)*100</code>) and <code>FH_WoodyAndHerbLitterCover</code> (<code>FH_WoodyLitterCover+FH_HerbLitterCover</code>) but the rest we pulled raw from the the BLM SDE server. These benchmarks were chosen because we believe they represent useful tools in managing the Tres Rios Field Office. This methodology could be used for any benchmark collected as part of a core method as part of the AIM protocol.</p>
+<p>Benchmarks were developed by first categorizing (joining) each AIM or LMF point by individual ESG. All AIM and LMF points that overlapped any ESG were used. Then for each indicator, within each category, min, max and quartiles were calculated.</p>
+<p>Then the quartiles were divided into suitable, marginal and unsuitable. In most cases two quartiles were grouped to form a suitable rating, marginal was one quartile and unsuitable was one quartile. For some indicators suitable was the first and second quartile, marginal was the the third quartile and unsuitable was the fourth quartile. All combinations were considered.</p>
+<table>
+<caption>Each indicator and the quartile rankings by suitable, moderate and unsuitable.</caption>
+<thead>
+<tr class="header">
+<th align="left">Indicator</th>
+<th align="left">Q1</th>
+<th align="left">Q2</th>
+<th align="left">Q3</th>
+<th align="left">Q4</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">AH_NonNoxTreeCover</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="even">
+<td align="left">TotalFoliarCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+</tr>
+<tr class="odd">
+<td align="left">AH_SagebrushCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+</tr>
+<tr class="even">
+<td align="left">Hgt_Sagebrush_Avg</td>
+<td align="left">Unsuitable</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+</tr>
+<tr class="odd">
+<td align="left">FH_WoodyAndHerbLitterCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+</tr>
+<tr class="even">
+<td align="left">AH_NonNoxShrubCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+</tr>
+<tr class="odd">
+<td align="left">AH_NonNoxPerenForbCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="even">
+<td align="left">Hgt_PerenForb_Avg</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="odd">
+<td align="left">AH_NonNoxPerenGrassCover</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="even">
+<td align="left">Hgt_NonNoxPerenGrass_Avg</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="odd">
+<td align="left">SoilStability_Protected</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="even">
+<td align="left">SoilStability_Unprotected</td>
+<td align="left">Unsuitable</td>
+<td align="left">Marginal</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+</tr>
+<tr class="odd">
+<td align="left">BareSoilCover</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="even">
+<td align="left">pct_sagebrush_dead</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="odd">
+<td align="left">NumSpp_NoxPlant</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="even">
+<td align="left">GapCover_25_plus</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="odd">
+<td align="left">GapCover_101_200</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="even">
+<td align="left">GapCover_200_plus</td>
+<td align="left">Suitable</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="odd">
+<td align="left">AH_NoxCover</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+<td align="left">Unsuitable</td>
+</tr>
+<tr class="even">
+<td align="left">AH_NoxAnnGrassCover</td>
+<td align="left">Suitable</td>
+<td align="left">Marginal</td>
+<td align="left">Unsuitable</td>
+<td align="left">Unsuitable</td>
+</tr>
+</tbody>
+</table>
+<p>These ranges were chosen based on professional judgement. In many cases it made sense to have Suitable center around the median, with some indicators having the fourth quartile be marginal and the first unsuitable. For instance AH_SagebrushCover we figured more sagebrush is less bad then too little. Therefore we concluded that the fourth quartile should be marginal and the first quartile should be unsuitable. This is the same approach the the BLM Gunnison sage-grouse habitat suitability rankings use. In some cases, however, it made the most sense to have the third and fourth quartiles represent suitable as was the case with AH_NonNoxPerenForbCover, Hgt_PerenForb_Avg, AH_NonNoxPerenGrassCover, Hgt_NonNoxPerenGrass_Avg, SoilStability_Protected, SoilStability_Unprotected.</p>
+<p>In addition to categorizing these benchmarks we also found it useful to, in some cases, remove zeros from the data for certain indicators. In many cases we did this because there were so many zeros for that indicator accross quartiles, that more than one quartile ranged from zero to zero. For more than one indicator all but one quartile was zeros. This fact demonstrates a limitation of this process. It is broad and general and involves quite a bit of error. However, we find these generalizations to be reasonable when comparing this approach to ESDs which contain large gaps in our field office and in many cases do not suggest plant coverages or heights but plant production.</p>
+<p><img src="documentation_files/figure-html/fig1-1.png" width="100%" /></p>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

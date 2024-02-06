@@ -1,0 +1,16 @@
+# Files and folders that are too big for github.
+ESGs/
+terradat_2018to2021.rds
+sde_up_to_2022.rds
+
+## Targets Specific
+_targets/
+
+## unused
+*.zip
+deprocated/
+output/temp/
+
+.Renviron
+
+2023_lup_design__trfo*
